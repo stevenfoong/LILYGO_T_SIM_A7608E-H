@@ -11,52 +11,31 @@
 
 #include "utilities.h"
 #include "config.h"
+#include "WifiModule.h"
+
 #include <SPI.h>
 #include <SD.h>
 #include <HTTPClient.h>
 
 #include <WiFi.h>
 
+#include "webServerModule.h"
+
+#include <Preferences.h>
+
+// Const
+
+
 
 
 // Set web server port number to 80
-WiFiServer server(80);
+//WebServer server(80);
 
 // Variable to store the HTTP request
 String header;
 
 
 
-void initWiFi() {
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi ..");
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print('.');
-    delay(1000);
-  }
-  Serial.println(WiFi.localIP());
-  Serial.println("Connecting to Internet ..");
-  HTTPClient http;
-  String url = WebHookURL + "?localip=" + WiFi.localIP();
-  //http.begin(serverPath.c_str());
-  http.begin("https://www.yahoo.com");
-  //http.begin("https://webhook.site/f3046b1d-5ee2-4734-8171-bde61a9dc567?localip=" + WiFi.localIP());
-  int httpResponseCode = http.GET();
-  if (httpResponseCode == 200) {
-    Serial.println("Connect to Internet Successfully.");
-    //String payload = http.getString();
-    // Serial.println(payload);
-  } else if (httpResponseCode>0) {
-    Serial.print("Error code: ");
-    Serial.println(httpResponseCode);
-  } else {
-    Serial.print("Error code: ");
-    Serial.println(httpResponseCode);
-  }
-      // Free resources
-  http.end();
-}
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -67,7 +46,7 @@ void initWiFi() {
 // See all AT commands, if wanted
 #define DUMP_AT_COMMANDS
 
-#define SMS_TARGET  SMS_Number //Change the number you want to send sms message
+#define SMS_TARGET SMS_Number //Change the number you want to send sms message
 
 #define TINY_GSM_MODEM_SIM7600
 #include <TinyGsmClient.h>
@@ -88,10 +67,15 @@ void setup()
   Serial.begin(115200);
 
   // Connect WiFi
-  initWiFi();
-  Serial.print("RRSI: ");
-  Serial.println(WiFi.RSSI());
+  connectWiFi();
 
+  // If Wifi Failed, start AP
+  if (!WiFiUp) {
+    initWiFiap();
+  }
+
+  // Start Web Server
+  startWebServer();
 
 
   // Turn on DC boost to power on the modem
@@ -134,7 +118,7 @@ void setup()
     // Wait PB DONE
     delay(10000);
 
-    Serial.print("Init success");
+    Serial.print("Init completed");
     //Serial.print("Init success, start to send message to  ");
     //Serial.println(SMS_TARGET);
 
