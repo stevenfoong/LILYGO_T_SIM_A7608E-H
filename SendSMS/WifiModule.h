@@ -1,5 +1,7 @@
 #include <WiFi.h>
 
+#include <Preferences.h>
+
 boolean WiFiUp = false;
 unsigned long connectedMillis;
 
@@ -8,6 +10,25 @@ IPAddress gateway(192,168,168,168);
 IPAddress subnet(255,255,255,0);
 
 void connectWiFi() {
+
+  Preferences pref;
+  String wifi_ssid;
+  String wifi_password;
+
+  pref.begin("tsim", false); 
+
+  wifi_ssid = pref.getString("wifi-ssid");
+  wifi_password = pref.getString("wifi-password");
+
+  pref.end();
+
+  if (wifi_ssid == "") {
+    wifi_ssid = default_ssid;
+  }
+
+  if (wifi_password == "") {
+    wifi_password = default_password;
+  }
 
   WiFi.setAutoConnect(false);
   WiFi.mode(WIFI_STA);
@@ -99,6 +120,6 @@ void reconnectWifi() {
   WiFi.mode(WIFI_AP_STA); // LAN and AP and UDP clients
   WiFi.begin(); // connect to LAN
   //Serial.printf("Trying to reconnect to %s, attempt %d ", ssid, retryCounter);
-  Serial.printf("Trying to reconnect to %s . ", wifi_ssid);
+  Serial.printf("Trying to reconnect to %s . ", default_ssid);
   connectWiFi();
 }
