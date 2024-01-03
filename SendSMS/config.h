@@ -1,7 +1,7 @@
-const char* ssid = "wifi-ssid";
-const char* password = "wifi-password";
+const char* default_ssid = "wifi-ssid";
+const char* default_password = "wifi-password";
 
-String WebHookURL = "https://Default-webhock";
+String default_WebHookURL = "https://Default-webhock";
 
-String SMS_Number = "0123456789";
+String default_SMS_Number = "0123456789";
 
