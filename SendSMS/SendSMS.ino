@@ -110,16 +110,18 @@ void parseData(String buff){
 
 //************************************************************
 void extractSms(String buff){
-  unsigned int index;
+  unsigned int index, endindex;;
    
   index = buff.indexOf(",");
   smsStatus = buff.substring(1, index-1); 
   buff.remove(0, index+2);
-    
-  senderNumber = buff.substring(0, 13);
-  buff.remove(0,19);
-   
-  receivedDate = buff.substring(0, 20);
+
+  index = buff.indexOf(",");
+  senderNumber = buff.substring(0, index-1);
+  buff.remove(0,index+5);
+
+  index = buff.indexOf("\r");
+  receivedDate = buff.substring(0, index-1);
   buff.remove(0,buff.indexOf("\r"));
   buff.trim();
     
@@ -140,7 +142,7 @@ void extractSms(String buff){
   http_client.addHeader("TimeStamp", receivedDate);  
   http_client.addHeader("Message-Content", msg);
   //String httpRequestData = "api_key=tPmAT5Ab3j7F9&sensor=BME280&value1=24.25&value2=49.54&value3=1005.14&sender=" + senderNumber + "&msg=" + msg;           
-  String httpRequestData = "api_key=tPmAT5Ab3j7F9&sensor=BME280&value1=24.25&value2=49.54&value3=1005.14";       
+  String httpRequestData = "timestamp=" + receivedDate + "&sender=" + senderNumber + "&message=" + msg;       
       // Send HTTP POST request
   int httpResponseCode = http_client.POST(httpRequestData);
   Serial.print("HTTP Response code: ");
@@ -236,14 +238,17 @@ void loop()
     //}
     //delay(1000);
 
-while(SerialAT.available()){
-  parseData(SerialAT.readString());
-}
-//////////////////////////////////////////////////
-while(Serial.available())  {
-  SerialAT.println(Serial.readString());
-}
+  while(SerialAT.available()){
+    parseData(SerialAT.readString());
+  }
 
+  while(Serial.available())  {
+    SerialAT.println(Serial.readString());
+  }
+
+  //Serial.print("looping");
+  //delay(1000);
+  
 /*
   updateSerial();
   static String currentLine = "";
@@ -290,15 +295,3 @@ while(Serial.available())  {
   delay(1000);    
 */
 }
-
-//void updateSerial()
-//{
-//  while (Serial.available())
-//  {
-//    SerialAT.write(Serial.read());//Forward what Serial received to Software Serial Port
-//  }
-//  while (SerialAT.available())
-//  {
-//    Serial.write(SerialAT.read());//Forward what Software Serial received to Serial Port
-//  }
-//}
