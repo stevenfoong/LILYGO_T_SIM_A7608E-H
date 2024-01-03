@@ -23,19 +23,9 @@
 
 #include <Preferences.h>
 
-// Const
-
-
-
-
-// Set web server port number to 80
-//WebServer server(80);
-
 // Variable to store the HTTP request
 String header;
-
-
-
+String webhook_url;
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -61,6 +51,104 @@ TinyGsm modem(SerialAT);
 
 char SeialInBuffer[64];
 char SMSbuffer[32];
+char smsBuffer[250];
+
+String smsStatus,senderNumber,receivedDate,msg,smsIndex;
+
+//void updateSerial();
+
+void parseData(String buff){
+  Serial.println("Start parseData");
+  Serial.println(buff);
+  Serial.println("End of buff");
+
+  unsigned int len, index, startindex, endindex;
+
+  startindex = buff.indexOf("=");
+  endindex = buff.indexOf("\r");
+  smsIndex = buff.substring(startindex+1, endindex);
+  Serial.println("smsindex= " + smsIndex);
+
+  //////////////////////////////////////////////////
+  //Remove sent "AT Command" from the response string.
+  index = buff.indexOf("\r");
+  buff.remove(0, index+2);
+  buff.trim();
+  //////////////////////////////////////////////////
+  
+  //////////////////////////////////////////////////
+  if(buff != "OK"){
+    index = buff.indexOf(":");
+    String cmd = buff.substring(0, index);
+    cmd.trim();
+    
+    buff.remove(0, index+2);
+    
+    if(cmd == "+CMTI"){
+      //get newly arrived memory location and store it in temp
+      index = buff.indexOf(",");
+      String temp = buff.substring(index+1, buff.length()); 
+      temp = "AT+CMGR=" + temp + "\r"; 
+      //get the message stored at memory location "temp"
+      SerialAT.println(temp); 
+    }
+    else if(cmd == "+CMGR"){
+      extractSms(buff);
+      SerialAT.print("AT+CMGD=");
+      SerialAT.println(smsIndex);
+      
+      //if(senderNumber == PHONE){
+      //  doAction();
+      //}
+    }
+  //////////////////////////////////////////////////
+  }
+  else{
+  //The result of AT Command is "OK"
+  }
+}
+
+//************************************************************
+void extractSms(String buff){
+  unsigned int index;
+   
+  index = buff.indexOf(",");
+  smsStatus = buff.substring(1, index-1); 
+  buff.remove(0, index+2);
+    
+  senderNumber = buff.substring(0, 13);
+  buff.remove(0,19);
+   
+  receivedDate = buff.substring(0, 20);
+  buff.remove(0,buff.indexOf("\r"));
+  buff.trim();
+    
+  index =buff.indexOf("\n\r");
+  buff = buff.substring(0, index);
+  buff.trim();
+  msg = buff;
+  buff = "";
+  msg.toLowerCase();
+  Serial.println("Extract Msg"); 
+  Serial.println(msg);
+
+  HTTPClient http_client;
+
+  http_client.begin(webhook_url);
+  http_client.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  http_client.addHeader("Sender-Number", senderNumber);
+  http_client.addHeader("TimeStamp", receivedDate);  
+  http_client.addHeader("Message-Content", msg);
+  //String httpRequestData = "api_key=tPmAT5Ab3j7F9&sensor=BME280&value1=24.25&value2=49.54&value3=1005.14&sender=" + senderNumber + "&msg=" + msg;           
+  String httpRequestData = "api_key=tPmAT5Ab3j7F9&sensor=BME280&value1=24.25&value2=49.54&value3=1005.14";       
+      // Send HTTP POST request
+  int httpResponseCode = http_client.POST(httpRequestData);
+  Serial.print("HTTP Response code: ");
+  Serial.println(httpResponseCode);
+        
+      // Free resources
+  http_client.end();
+}
 
 void setup()
 {
@@ -77,6 +165,14 @@ void setup()
   // Start Web Server
   startWebServer();
 
+  Preferences pref;
+  pref.begin("tsim", false); 
+  webhook_url= pref.getString("webhook-url");
+  pref.end();
+
+  if (webhook_url == "") {
+    webhook_url = default_WebHookURL;
+  }
 
   // Turn on DC boost to power on the modem
   #ifdef BOARD_POWERON_PIN
@@ -129,13 +225,80 @@ void setup()
     //Serial.println(res ? "OK" : "fail");
 }
 
+
 void loop()
 {
-    if (Serial.available()) {
-        SerialAT.write(Serial.read());
-    }
-    if (Serial.available()) {
-        SerialAT.write(Serial.read());
-    }
-    delay(1);
+    //if (SerialAT.available()) {
+    //    SerialAT.write(Serial.read());
+    //}
+    //if (SerialAT.available()) {
+    //    SerialAT.write(Serial.read());
+    //}
+    //delay(1000);
+
+while(SerialAT.available()){
+  parseData(SerialAT.readString());
 }
+//////////////////////////////////////////////////
+while(Serial.available())  {
+  SerialAT.println(Serial.readString());
+}
+
+/*
+  updateSerial();
+  static String currentLine = "";
+  while (SerialAT.available()) {
+    char c = SerialAT.read();
+    if (c == '\n') {
+      currentLine.trim(); // Remove leading/trailing whitespace
+      if (currentLine.startsWith("+CMTI: \"SM\",")) {
+        // Extract SMS index from the line
+        int smsIndex = currentLine.substring(13).toInt();
+        // Read the SMS with the extracted index using AT commands
+        SerialAT.print("AT+CMGR=");
+        SerialAT.println(smsIndex);
+        delay(100); // Allow time for response
+        // Process the SMS message
+        if (SerialAT.find("+CMGR:")) {
+          String receivedMessage = SerialAT.readStringUntil('\n');
+          receivedMessage.trim();
+          SerialMon.println("Received SMS: " + receivedMessage);
+          // Store the received message in the buffer
+          receivedMessage.toCharArray(smsBuffer, sizeof(smsBuffer));
+          SerialMon.println("Stored in buffer: " + String(smsBuffer));
+          // Delete the SMS after processing
+          SerialAT.print("AT+CMGD=");
+          SerialAT.println(smsIndex);
+          delay(100); // Allow time for response
+        }
+      }
+      currentLine = ""; // Clear the line
+    } else {
+      currentLine += c; // Append character to the line
+    }
+  }
+  //int rdn = random(100); // random number trigger event based sms or conditinal sms trigger
+  //SMS_Message = "HELLO FROM ESP32";
+  //if (rdn == 10) {
+  //  if (modem.sendSMS(SMS_TARGET, SMS_Message)) {
+  //    SerialMon.println(SMS_Message);
+  //  }
+  //  else {
+  //    SerialMon.println("SMS failed to send");
+  //  }
+  //}
+  delay(1000);    
+*/
+}
+
+//void updateSerial()
+//{
+//  while (Serial.available())
+//  {
+//    SerialAT.write(Serial.read());//Forward what Serial received to Software Serial Port
+//  }
+//  while (SerialAT.available())
+//  {
+//    Serial.write(SerialAT.read());//Forward what Software Serial received to Serial Port
+//  }
+//}

@@ -119,6 +119,28 @@ void startWebServer() {
       pref.end();
     });
 
+    webserver.on("/reboot", HTTP_GET, [] (AsyncWebServerRequest *request) {
+      Serial.println("Rebooting Unit");
+      ESP.restart();
+    });
+
+    webserver.on("/viewconfig", HTTP_GET, [] (AsyncWebServerRequest *request) {
+      pref.begin("tsim", false); 
+
+      String orig_post_wifi_ssid;
+      String orig_post_wifi_password;
+      String orig_webhook_url;
+
+      orig_post_wifi_ssid = pref.getString("wifi-ssid");
+      orig_post_wifi_password = pref.getString("wifi-password");
+      orig_webhook_url = pref.getString("webhook-url");
+      
+      request->send(200, "text/plain", "wifi SSID : " + orig_post_wifi_ssid + " , wifi PASSWORD : " + orig_post_wifi_password + ", Webhook URL : " + orig_webhook_url);
+
+      pref.end();
+    });
+
+
   webserver.onNotFound(notFound);
 
   webserver.begin();

@@ -21,6 +21,7 @@ const char *HTML_CONTENT_HOME = R"=====(
     <h1>Welcome to the Tsim Configuration Page</h1>
 
     <h3>Wifi</h3>
+    <h4>After saving the configuration, remember to reboot the unit to ensure the changes take effect.<h4>
     <form action="/savewifi" method="post">
       <input type="text" name="wifi-ssid" value="ssid">
       <input type="text" name="wifi-password" value="password">
@@ -34,6 +35,14 @@ const char *HTML_CONTENT_HOME = R"=====(
       <button type="submit" name="submitform" class="btn btn-success" value="save">Save</button>
     </form>
 
+    <br>
+    <h3>Reboot</h3>
+    <form action="/reboot" method="get">
+      <input type="hidden" name="webhook-url" value="url">
+      <button type="submit" name="submitform" class="btn btn-success" value="save">Reboot</button>
+    </form>
+
+    <p><a href="/viewconfig" target="_blank">View Current Configuration.</a>.</p>
 
 </body>
 </html>
