@@ -23,9 +23,12 @@
 
 #include <Preferences.h>
 
+#include "TFCardModule.h"
+
 // Variable to store the HTTP request
 String header;
 String webhook_url;
+String backup_webhook_url;
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -110,6 +113,7 @@ void parseData(String buff){
 
 //************************************************************
 void extractSms(String buff){
+  AppendLog (buff);
   unsigned int index, endindex;;
    
   index = buff.indexOf(",");
@@ -136,6 +140,7 @@ void extractSms(String buff){
 
   HTTPClient http_client;
 
+  Serial.println("Forward SMS to primary webhook.");
   http_client.begin(webhook_url);
   http_client.addHeader("Content-Type", "application/x-www-form-urlencoded");
   http_client.addHeader("Sender-Number", senderNumber);
@@ -145,6 +150,22 @@ void extractSms(String buff){
   String httpRequestData = "timestamp=" + receivedDate + "&sender=" + senderNumber + "&message=" + msg;       
       // Send HTTP POST request
   int httpResponseCode = http_client.POST(httpRequestData);
+  Serial.print("HTTP Response code: ");
+  Serial.println(httpResponseCode);
+        
+      // Free resources
+  http_client.end();
+
+  Serial.println("Forward SMS to backup webhook.");
+  http_client.begin(backup_webhook_url);
+  http_client.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  http_client.addHeader("Sender-Number", senderNumber);
+  http_client.addHeader("TimeStamp", receivedDate);  
+  http_client.addHeader("Message-Content", msg);
+  //String httpRequestData = "api_key=tPmAT5Ab3j7F9&sensor=BME280&value1=24.25&value2=49.54&value3=1005.14&sender=" + senderNumber + "&msg=" + msg;           
+  httpRequestData = "timestamp=" + receivedDate + "&sender=" + senderNumber + "&message=" + msg;       
+      // Send HTTP POST request
+  httpResponseCode = http_client.POST(httpRequestData);
   Serial.print("HTTP Response code: ");
   Serial.println(httpResponseCode);
         
@@ -170,11 +191,19 @@ void setup()
   Preferences pref;
   pref.begin("tsim", false); 
   webhook_url= pref.getString("webhook-url");
+  backup_webhook_url= pref.getString("b-webhook-url");
   pref.end();
 
   if (webhook_url == "") {
     webhook_url = default_WebHookURL;
   }
+
+  if (backup_webhook_url == "") {
+    backup_webhook_url = default_Backup_WebHookURL;
+  }
+
+  //Serial.println("Test SD Card.");
+  //SDCardTest ();
 
   // Turn on DC boost to power on the modem
   #ifdef BOARD_POWERON_PIN

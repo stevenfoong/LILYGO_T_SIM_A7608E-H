@@ -36,6 +36,13 @@ const char *HTML_CONTENT_HOME = R"=====(
     </form>
 
     <br>
+    <h3>Backup Webhook</h3>
+    <form action="/savebackupwebhook" method="post">
+      <input type="text" name="backup-webhook-url" value="url">
+      <button type="submit" name="submitform" class="btn btn-success" value="save">Save</button>
+    </form>
+
+    <br>
     <h3>Reboot</h3>
     <form action="/reboot" method="get">
       <input type="hidden" name="webhook-url" value="url">

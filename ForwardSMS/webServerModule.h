@@ -119,6 +119,38 @@ void startWebServer() {
       pref.end();
     });
 
+    webserver.on("/savebackupwebhook", HTTP_POST, [](AsyncWebServerRequest *request){
+      String message;
+      String orig_backup_webhook_url;
+      String post_backup_webhook_url;
+
+      pref.begin("tsim", false); 
+
+      bool error_found = false;
+
+      if (request->hasParam("backup-webhook-url", true)) {
+        post_backup_webhook_url = request->getParam("backup-webhook-url", true)->value();
+      } else {
+        message = "URL not found";
+        error_found = true;
+      }
+
+      if (post_backup_webhook_url == "") {
+        message = "webhook URL is empty";
+        error_found = true;
+      }       
+
+      if (error_found) {
+        request->send(200, "text/plain", "Error : " + message + ". Press back button to previous page.");
+      } else {
+        orig_backup_webhook_url = pref.getString("b-webhook-url");
+        pref.putString("b-webhook-url", post_backup_webhook_url);
+        request->send(200, "text/plain", "Backup Webhook URL : " + orig_backup_webhook_url + " -> " + post_backup_webhook_url + ". Press back button to previous page.");
+      }
+      pref.end();
+    });
+
+
     webserver.on("/reboot", HTTP_GET, [] (AsyncWebServerRequest *request) {
       Serial.println("Rebooting Unit");
       ESP.restart();
@@ -130,12 +162,14 @@ void startWebServer() {
       String orig_post_wifi_ssid;
       String orig_post_wifi_password;
       String orig_webhook_url;
+      String orig_backup_webhook_url;
 
       orig_post_wifi_ssid = pref.getString("wifi-ssid");
       orig_post_wifi_password = pref.getString("wifi-password");
       orig_webhook_url = pref.getString("webhook-url");
+      orig_backup_webhook_url = pref.getString("b-webhook-url");
       
-      request->send(200, "text/plain", "wifi SSID : " + orig_post_wifi_ssid + " , wifi PASSWORD : " + orig_post_wifi_password + ", Webhook URL : " + orig_webhook_url);
+      request->send(200, "text/plain", "wifi SSID : " + orig_post_wifi_ssid + " , wifi PASSWORD : " + orig_post_wifi_password + ", Webhook URL : " + orig_webhook_url + ", Backup Webhook URL : " + orig_backup_webhook_url);
 
       pref.end();
     });

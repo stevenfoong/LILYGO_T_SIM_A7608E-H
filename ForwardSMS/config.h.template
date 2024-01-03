@@ -4,6 +4,7 @@ const char* ap_ssid = "tsim";
 const char* ap_password = "88888888";
 
 String default_WebHookURL = "https://Default-webhock";
+String default_Backup_WebHookURL = "https://Default-webhock";
 
 String default_SMS_Number = "0123456789";
 
