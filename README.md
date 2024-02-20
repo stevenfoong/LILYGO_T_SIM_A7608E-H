@@ -28,3 +28,7 @@ This is the web console.
 Library Needed:
  - ESP32 Board Manager by Espressif Systems
  - ESPAsyncWebSrv by dvarrel
+
+References:
+ - https://github.com/Xinyuan-LilyGO/T-A7608X/tree/main (archived and read-only)
+ - https://github.com/Xinyuan-LilyGO/LilyGO-T-A76XX/tree/main (latest and compatible code)
