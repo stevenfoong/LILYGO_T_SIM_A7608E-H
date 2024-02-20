@@ -43,6 +43,27 @@ const char *HTML_CONTENT_HOME = R"=====(
     </form>
 
     <br>
+    <h3>Port</h3>
+    <form action="/saveport" method="post">
+      <input type="text" name="port" value="01">
+      <button type="submit" name="submitform" class="btn btn-success" value="save">Save</button>
+    </form>
+
+    <br>
+    <h3>Sender</h3>
+    <form action="/savesender" method="post">
+      <input type="text" name="sender" value="sender">
+      <button type="submit" name="submitform" class="btn btn-success" value="save">Save</button>
+    </form>
+
+    <br>
+    <h3>Receiver</h3>
+    <form action="/savereceiver" method="post">
+      <input type="text" name="receiver" value="receiver">
+      <button type="submit" name="submitform" class="btn btn-success" value="save">Save</button>
+    </form>
+
+    <br>
     <h3>Reboot</h3>
     <form action="/reboot" method="get">
       <input type="hidden" name="webhook-url" value="url">

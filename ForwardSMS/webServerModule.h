@@ -150,6 +150,98 @@ void startWebServer() {
       pref.end();
     });
 
+    webserver.on("/saveport", HTTP_POST, [](AsyncWebServerRequest *request){
+      String message;
+      String orig_port;
+      String post_port;
+
+      pref.begin("tsim", false); 
+
+      bool error_found = false;
+
+      if (request->hasParam("port", true)) {
+        post_port = request->getParam("port", true)->value();
+      } else {
+        message = "PORT not found";
+        error_found = true;
+      }
+
+      if (post_port == "") {
+        message = "PORT is empty";
+        error_found = true;
+      }       
+
+      if (error_found) {
+        request->send(200, "text/plain", "Error : " + message + ". Press back button to previous page.");
+      } else {
+        orig_port = pref.getString("port");
+        pref.putString("port", post_port);
+        request->send(200, "text/plain", "Port : " + orig_port + " -> " + post_port + ". Press back button to previous page.");
+      }
+      pref.end();
+    });
+
+    webserver.on("/savesender", HTTP_POST, [](AsyncWebServerRequest *request){
+      String message;
+      String orig_sender;
+      String post_sender;
+
+      pref.begin("tsim", false); 
+
+      bool error_found = false;
+
+      if (request->hasParam("sender", true)) {
+        post_sender = request->getParam("sender", true)->value();
+      } else {
+        message = "SENDER not found";
+        error_found = true;
+      }
+
+      if (post_sender == "") {
+        message = "SENDER is empty";
+        error_found = true;
+      }       
+
+      if (error_found) {
+        request->send(200, "text/plain", "Error : " + message + ". Press back button to previous page.");
+      } else {
+        orig_sender = pref.getString("sender");
+        pref.putString("sender", post_sender);
+        request->send(200, "text/plain", "Sender : " + orig_sender + " -> " + post_sender + ". Press back button to previous page.");
+      }
+      pref.end();
+    });
+
+    webserver.on("/savereceiver", HTTP_POST, [](AsyncWebServerRequest *request){
+      String message;
+      String orig_receiver;
+      String post_receiver;
+
+      pref.begin("tsim", false); 
+
+      bool error_found = false;
+
+      if (request->hasParam("receiver", true)) {
+        post_receiver = request->getParam("receiver", true)->value();
+      } else {
+        message = "RECEIVER not found";
+        error_found = true;
+      }
+
+      if (post_receiver == "") {
+        message = "RECEIVER is empty";
+        error_found = true;
+      }       
+
+      if (error_found) {
+        request->send(200, "text/plain", "Error : " + message + ". Press back button to previous page.");
+      } else {
+        orig_receiver = pref.getString("receiver");
+        pref.putString("receiver", post_receiver);
+        request->send(200, "text/plain", "Receiver : " + orig_receiver + " -> " + post_receiver + ". Press back button to previous page.");
+      }
+      pref.end();
+    });
 
     webserver.on("/reboot", HTTP_GET, [] (AsyncWebServerRequest *request) {
       Serial.println("Rebooting Unit");
@@ -163,13 +255,19 @@ void startWebServer() {
       String orig_post_wifi_password;
       String orig_webhook_url;
       String orig_backup_webhook_url;
+      String orig_port;
+      String orig_sender;
+      String orig_receiver;
 
       orig_post_wifi_ssid = pref.getString("wifi-ssid");
       orig_post_wifi_password = pref.getString("wifi-password");
       orig_webhook_url = pref.getString("webhook-url");
       orig_backup_webhook_url = pref.getString("b-webhook-url");
+      orig_port = pref.getString("port");
+      orig_sender = pref.getString("sender");
+      orig_receiver = pref.getString("receiver");
       
-      request->send(200, "text/plain", "wifi SSID : " + orig_post_wifi_ssid + " , wifi PASSWORD : " + orig_post_wifi_password + ", Webhook URL : " + orig_webhook_url + ", Backup Webhook URL : " + orig_backup_webhook_url);
+      request->send(200, "text/html", "wifi SSID : " + orig_post_wifi_ssid + " . <br> wifi PASSWORD : " + orig_post_wifi_password + " . <br> Webhook URL : " + orig_webhook_url + " . <br> Backup Webhook URL : " + orig_backup_webhook_url + " . <br> Sender : " + orig_sender + " . <br> Receiver : " + orig_receiver +" . <br> Port : " + orig_port);
 
       pref.end();
     });

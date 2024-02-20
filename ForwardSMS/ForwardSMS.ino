@@ -29,6 +29,10 @@
 String header;
 String webhook_url;
 String backup_webhook_url;
+String payload_data;
+String port;
+String sender;
+String receiver;
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -138,18 +142,23 @@ void extractSms(String buff){
   Serial.println("Extract Msg"); 
   Serial.println(msg);
 
+  payload_data = "?port=" + port + "&sender=" + sender + "&receiver=" + receiver;
+  //String httpRequestData = "Sender: " + sender + "&sender=" + senderNumber + "&message=" + msg;   
+  String httpRequestData = "Sender: " + sender + "\n\rReceiver: " + receiver + "\n\rSMSC: " + receiver + "\n\rSCTS: " + receiver + "\n\r\n\r" + msg;
+  
   HTTPClient http_client;
 
   Serial.println("Forward SMS to primary webhook.");
-  http_client.begin(webhook_url);
-  http_client.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  http_client.begin(webhook_url+payload_data);
+  http_client.addHeader("Content-Type", "text/plain");
   http_client.addHeader("Sender-Number", senderNumber);
   http_client.addHeader("TimeStamp", receivedDate);  
   http_client.addHeader("Message-Content", msg);
   //String httpRequestData = "api_key=tPmAT5Ab3j7F9&sensor=BME280&value1=24.25&value2=49.54&value3=1005.14&sender=" + senderNumber + "&msg=" + msg;           
-  String httpRequestData = "timestamp=" + receivedDate + "&sender=" + senderNumber + "&message=" + msg;       
+  //String httpRequestData = "timestamp=" + receivedDate + "&sender=" + senderNumber + "&message=" + msg;       
       // Send HTTP POST request
   int httpResponseCode = http_client.POST(httpRequestData);
+  //int httpResponseCode = http_client.POST(httpRequestData);
   Serial.print("HTTP Response code: ");
   Serial.println(httpResponseCode);
         
@@ -157,13 +166,13 @@ void extractSms(String buff){
   http_client.end();
 
   Serial.println("Forward SMS to backup webhook.");
-  http_client.begin(backup_webhook_url);
-  http_client.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  http_client.begin(backup_webhook_url+payload_data);
+  http_client.addHeader("Content-Type", "text/plain");
   http_client.addHeader("Sender-Number", senderNumber);
   http_client.addHeader("TimeStamp", receivedDate);  
   http_client.addHeader("Message-Content", msg);
   //String httpRequestData = "api_key=tPmAT5Ab3j7F9&sensor=BME280&value1=24.25&value2=49.54&value3=1005.14&sender=" + senderNumber + "&msg=" + msg;           
-  httpRequestData = "timestamp=" + receivedDate + "&sender=" + senderNumber + "&message=" + msg;       
+  //httpRequestData = "timestamp=" + receivedDate + "&sender=" + senderNumber + "&message=" + msg;       
       // Send HTTP POST request
   httpResponseCode = http_client.POST(httpRequestData);
   Serial.print("HTTP Response code: ");
@@ -192,6 +201,9 @@ void setup()
   pref.begin("tsim", false); 
   webhook_url= pref.getString("webhook-url");
   backup_webhook_url= pref.getString("b-webhook-url");
+  port= pref.getString("port");
+  sender= pref.getString("sender");
+  receiver= pref.getString("receiver");
   pref.end();
 
   if (webhook_url == "") {
