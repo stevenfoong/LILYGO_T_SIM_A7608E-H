@@ -33,6 +33,7 @@ String payload_data;
 String port;
 String sender;
 String receiver;
+//const String sim_number;
 
 // Define the serial console for debug prints, if needed
 #define TINY_GSM_DEBUG SerialMon
@@ -100,9 +101,21 @@ void parseData(String buff){
       SerialAT.println(temp); 
     }
     else if(cmd == "+CMGR"){
+      //modem.sendAT("+CNUM");
+      //delay(10000);
       extractSms(buff);
       SerialAT.print("AT+CMGD=");
       SerialAT.println(smsIndex);
+      
+      //if(senderNumber == PHONE){
+      //  doAction();
+      //}
+    }
+    else if(cmd == "+CNUM"){
+      Serial.println("CNUM detected");
+      extract_sim_number(buff);
+      //SerialAT.print("AT+CMGD=");
+      //SerialAT.println(smsIndex);
       
       //if(senderNumber == PHONE){
       //  doAction();
@@ -138,13 +151,19 @@ void extractSms(String buff){
   buff.trim();
   msg = buff;
   buff = "";
-  msg.toLowerCase();
+  //msg.toLowerCase();
   Serial.println("Extract Msg"); 
   Serial.println(msg);
 
-  payload_data = "?port=" + port + "&sender=" + sender + "&receiver=" + receiver;
+  Preferences pref;
+  pref.begin("tsim", false); 
+  receiver= pref.getString("receiver");
+  //pref.putString("receiver", sim_number);
+  pref.end();
+
+  payload_data = "?port=" + port + "&sender=" + senderNumber + "&receiver=" + receiver;
   //String httpRequestData = "Sender: " + sender + "&sender=" + senderNumber + "&message=" + msg;   
-  String httpRequestData = "Sender: " + sender + "\n\rReceiver: " + receiver + "\n\rSMSC: " + receiver + "\n\rSCTS: " + receiver + "\n\r\n\r" + msg;
+  String httpRequestData = "Sender: " + senderNumber + "\n\rReceiver: " + receiver + "\n\rSMSC: " + receiver + "\n\rSCTS: " + receiver + "\n\r\n\r" + msg;
   
   HTTPClient http_client;
 
@@ -153,7 +172,7 @@ void extractSms(String buff){
   http_client.addHeader("Content-Type", "text/plain");
   http_client.addHeader("Sender-Number", senderNumber);
   http_client.addHeader("TimeStamp", receivedDate);  
-  http_client.addHeader("Message-Content", msg);
+  //http_client.addHeader("Message-Content", msg);
   //String httpRequestData = "api_key=tPmAT5Ab3j7F9&sensor=BME280&value1=24.25&value2=49.54&value3=1005.14&sender=" + senderNumber + "&msg=" + msg;           
   //String httpRequestData = "timestamp=" + receivedDate + "&sender=" + senderNumber + "&message=" + msg;       
       // Send HTTP POST request
@@ -170,7 +189,7 @@ void extractSms(String buff){
   http_client.addHeader("Content-Type", "text/plain");
   http_client.addHeader("Sender-Number", senderNumber);
   http_client.addHeader("TimeStamp", receivedDate);  
-  http_client.addHeader("Message-Content", msg);
+  //http_client.addHeader("Message-Content", msg);
   //String httpRequestData = "api_key=tPmAT5Ab3j7F9&sensor=BME280&value1=24.25&value2=49.54&value3=1005.14&sender=" + senderNumber + "&msg=" + msg;           
   //httpRequestData = "timestamp=" + receivedDate + "&sender=" + senderNumber + "&message=" + msg;       
       // Send HTTP POST request
@@ -180,6 +199,33 @@ void extractSms(String buff){
         
       // Free resources
   http_client.end();
+}
+
+void extract_sim_number(String buff){
+  Serial.println("Retrieving SIM Number.");
+  //String buff;
+  //modem.sendAT("+CNUM");
+  //modem.waitResponse(1000L, buff);
+  //modem.sendAT("+CNUM");
+  //modem.waitResponse(1000L, buff);
+  Serial.println(buff);
+  unsigned int index, endindex;;
+  String sim_number;
+  index = buff.indexOf(",");
+   
+  buff.remove(0, index+2);
+
+  index = buff.indexOf(",");
+  sim_number = buff.substring(0, index-1);
+  Serial.println("sim number:" + sim_number);
+  receiver= sim_number;
+  //buff.remove(0,index+5);
+  Preferences pref;
+  pref.begin("tsim", false); 
+  //receiver= pref.getString("receiver");
+  pref.putString("receiver", sim_number);
+  pref.end();
+  Serial.println("End Retrieving SIM Number.");
 }
 
 void setup()
@@ -256,8 +302,22 @@ void setup()
     Serial.println("\nModem is online");
     // Wait PB DONE
     delay(10000);
+    if(SerialAT.available()){
+      parseData(SerialAT.readString());
+    }
 
-    Serial.print("Init completed");
+    //sim_number = modem.getIMSI();
+
+    modem.sendAT("+CNUM");
+    //modem.waitResponse(1000L, sim_number);
+
+    //Serial.println(input);
+    Serial.println("Init completed");
+
+    //SerialAT.print("AT+CNUM\r\n");
+    //String sim_number_buff = SerialAT.readString();
+    //extract_sim_number();
+    
     //Serial.print("Init success, start to send message to  ");
     //Serial.println(SMS_TARGET);
 

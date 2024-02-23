@@ -2,9 +2,14 @@
 #include "web_index.h"
 #include <Preferences.h>
 
+#define TINY_GSM_MODEM_SIM7600
+#include <TinyGsmClient.h>
+
+
 AsyncWebServer webserver(80);
 
 Preferences pref;
+String sim_number;
 
 
 const char* PARAM_MESSAGE = "message";
@@ -14,7 +19,12 @@ void notFound(AsyncWebServerRequest *request) {
 }
 
 void startWebServer() {
-  
+
+    //TinyGsm modem(SerialAT);
+    //modem.sendAT("+CNUM");
+    //modem.waitResponse(1000L, sim_number);
+    SerialAT.print("AT+CNUM\r\n");
+    sim_number = SerialAT.readString();
 
     webserver.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
         String html = HTML_CONTENT_HOME;
@@ -239,6 +249,50 @@ void startWebServer() {
         orig_receiver = pref.getString("receiver");
         pref.putString("receiver", post_receiver);
         request->send(200, "text/plain", "Receiver : " + orig_receiver + " -> " + post_receiver + ". Press back button to previous page.");
+      }
+      pref.end();
+    });
+
+    webserver.on("/smstest", HTTP_POST, [](AsyncWebServerRequest *request){
+      TinyGsm modem(SerialAT);
+      String message;
+      //String orig_receiver;
+      //String post_receiver;
+      String sms_number;
+
+      //pref.begin("tsim", false); 
+
+      bool error_found = false;
+
+      if (request->hasParam("smsnumber", true)) {
+        sms_number = request->getParam("smsnumber", true)->value();
+      } else {
+        message = "SMS NUMBER not found";
+        error_found = true;
+      }
+
+      if (sms_number == "") {
+        message = "SMS NUMBER is empty";
+        error_found = true;
+      }       
+
+      if (error_found) {
+        request->send(200, "text/plain", "Error : " + message + ". Press back button to previous page.");
+      } else {
+        String imei = modem.getIMEI();
+        //String sim_number = modem.getIMSI();
+        //String sim_number = modem.sendAT("AT+CNUM");
+        //String sim_number;
+        //modem.sendAT("+CNUM");
+        //modem.waitResponse(1000L, sim_number);
+        //bool res = modem.sendSMS(sms_number, String("Hello from ") + imei + String(" ") + sms_number);
+        bool res = modem.sendSMS(sms_number, String("Hello from ") + sim_number);
+        Serial.print("Send sms message ");
+        Serial.println(res ? "OK" : "fail");
+
+        //orig_receiver = pref.getString("receiver");
+        //pref.putString("receiver", post_receiver);
+        request->send(200, "text/plain", "SMS sent. Press back button to previous page.");
       }
       pref.end();
     });

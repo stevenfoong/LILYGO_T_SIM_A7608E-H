@@ -19,9 +19,8 @@ const char *HTML_CONTENT_HOME = R"=====(
 </head>
 <body>
     <h1>Welcome to the Tsim Configuration Page</h1>
-
+    <h2>After saving the configuration, remember to reboot the unit to ensure the changes take effect.<h4>
     <h3>Wifi</h3>
-    <h4>After saving the configuration, remember to reboot the unit to ensure the changes take effect.<h4>
     <form action="/savewifi" method="post">
       <input type="text" name="wifi-ssid" value="ssid">
       <input type="text" name="wifi-password" value="password">
@@ -49,18 +48,27 @@ const char *HTML_CONTENT_HOME = R"=====(
       <button type="submit" name="submitform" class="btn btn-success" value="save">Save</button>
     </form>
 
+<!--
     <br>
     <h3>Sender</h3>
     <form action="/savesender" method="post">
       <input type="text" name="sender" value="sender">
       <button type="submit" name="submitform" class="btn btn-success" value="save">Save</button>
     </form>
+-->
 
     <br>
     <h3>Receiver</h3>
     <form action="/savereceiver" method="post">
       <input type="text" name="receiver" value="receiver">
       <button type="submit" name="submitform" class="btn btn-success" value="save">Save</button>
+    </form>
+
+    <br>
+    <h3>Send Test SMS</h3>
+    <form action="/smstest" method="post">
+      <input type="text" name="smsnumber" value="smsnumber">
+      <button type="submit" name="submitform" class="btn btn-success" value="save">Test</button>
     </form>
 
     <br>
